@@ -1,0 +1,310 @@
+#Options
+GenerateScanner = true
+GenerateParser = true
+Language = C++
+ScannerName = Lexico
+ParserName = Sintatico
+SemanticName = Semantico
+ScannerCaseSensitive = true
+ScannerTable = Full
+Input = String
+Parser = SLR
+#RegularDefinitions
+
+#Tokens
+// Comentários
+MULTI_LINE_COMMENT : "/*" ( . | [\n] )* "*/"
+SINGLE_LINE_COMMENT : "/" "/" ^.*
+
+INTEGER: [0-9]+
+FLOAT: [0-9]+\.[0-9]+
+ID: [a-z][a-zA-Z0-9_]*
+STRING: \"[a-zA-Z0-9_\s]*\"
+
+
+
+// Palavras-chave
+INTEGER_KEYWORD = ID : "int"
+FLOAT_KEYWORD = ID : "float"
+STRING_KEYWORD = ID : "string"
+BOOL_KEYWORD = ID : "bool"
+CHAR_KEYWORD = ID : "char"
+DOUBLE_KEYWORD = ID : "double"
+VOID_KEYWORD = ID : "void"
+PROCEDURE_KEYWORD = ID : "procedure"
+FUNCTION_KEYWORD = ID : "function"
+
+// Controle de fluxo
+IF_KEYWORD = ID : "if"
+ELSE_KEYWORD = ID : "else"
+FOR_KEYWORD = ID : "for"
+WHILE_KEYWORD = ID : "while"
+RETURN_KEYWORD = ID : "return"
+SWITCH_KEYWORD = ID : "switch"
+CASE_KEYWORD = ID : "case"
+DEFAULT_KEYWORD = ID : "default"
+BREAK_KEYWORD = ID : "break"
+CONTINUE_KEYWORD = ID : "continue"
+DO_KEYWORD = ID : "do"
+LEIA_KEYWORD = ID : "leia"
+ESCREVA_KEYWORD = ID : "escreva"
+
+//Operadores
+OPERATOR_PLUS: "+"
+OPERATOR_MINUS: "-"
+OPERATOR_DIVIDE: "/" 
+OPERATOR_MULTIPLY: "*"
+OPERATOR_SINGLE_EQUAL: "="
+OPERATOR_MOD: "%"
+
+// Operadores relacionais
+OPERATOR_GREATER: ">"
+OPERATOR_LESS: "<"
+OPERATOR_GREATER_EQUAL : ">="
+OPERATOR_LESS_EQUAL : "<="
+OPERATOR_EQUAL : "=="
+OPERATOR_NOT_EQUAL : "!="
+
+// Operadores lógicos
+OPERATOR_AND : "&&"
+OPERATOR_OR : "||"
+OPERATOR_NOT : "!"
+OPERATOR_EQUAL : "=="
+
+// Operadores bit a bit
+OPERATOR_SHIFT_LEFT : "<<"
+OPERATOR_SHIFT_RIGHT : ">>"
+OPERATOR_BIT_AND : "&"
+OPERATOR_BIT_OR : "|"
+OPERATOR_BIT_NOT : "~"
+OPERATOR_BIT_XOR : "^"
+
+
+
+// Delimitadores
+DELIMITER_DOT : "."
+DELIMITER_COMMA : ","
+DELIMITER_SEMICOLON : ";"
+DELIMITER_COLON : ":"
+DELIMITER_LPAREN : "("
+DELIMITER_RPAREN : ")"
+DELIMITER_LBRACKET : "["
+DELIMITER_RBRACKET : "]"
+DELIMITER_LCURLY : "{"
+DELIMITER_RCURLY : "}"
+
+
+//COMMAND_RETURN: \n
+
+
+:[\n\s\t]
+#NonTerminals
+<program>
+<optional_stmt_list>
+<stmt_list>
+<stmt_list_tail>
+<stmt>
+<type>
+<l_id>
+<l_id_tail>
+<dec>
+<optional_array_access>
+<array_access>
+<block>
+<var_or_array>
+<assignment>
+<expression>
+<logical_or>
+<logical_or_tail>
+<logical_and>
+<logical_and_tail>
+<bitwise_or>
+<bitwise_or_tail>
+<bitwise_xor>
+<bitwise_xor_tail>
+<bitwise_and>
+<bitwise_and_tail>
+<equality>
+<equality_tail>
+<relational>
+<relational_tail>
+<shift>
+<shift_tail>
+<additive>
+<additive_tail>
+<multiplicative>
+<multiplicative_tail>
+<unary>
+<unary_op>
+<primary>
+<condition>
+<loop>
+<while_loop>
+<for_loop>
+<do_while_loop>
+<post_operation>
+<conditional>
+<optional_else>
+<input>
+<output>
+<output_expr>
+<subroutine_declaration>
+<return_type_spec>
+<parameter_list_optional>
+<parameter_list>
+<parameter_list_tail_comma>
+<parameter>
+<optional_array_spec_param_suffix>
+<function_body_block>
+<subroutine_call>
+<function_call>
+<argument_list_optional>
+<argument_list>
+#Grammar
+<program> ::= <optional_stmt_list>;
+
+<optional_stmt_list> ::= <stmt_list> | î;
+<stmt_list> ::= <stmt> <stmt_list_tail>;
+<stmt_list_tail> ::= <stmt> <stmt_list_tail> | î;
+
+<stmt> ::= <dec>
+ | <block>
+ | <assignment>
+ | <subroutine_declaration>
+ | <subroutine_call>
+ | <input>
+ | <output>
+ | <conditional>
+ | <loop>;
+
+// TIPOS E DECLARACOES DE VARIAVEIS
+<type> ::= INTEGER_KEYWORD
+ | FLOAT_KEYWORD
+ | STRING_KEYWORD
+ | BOOL_KEYWORD
+ | CHAR_KEYWORD
+ | DOUBLE_KEYWORD
+ | VOID_KEYWORD;
+
+<l_id> ::= ID #2 <l_id_tail>;
+<l_id_tail> ::= DELIMITER_COMMA ID #2 <l_id_tail> | î;
+
+<dec> ::= <l_id> DELIMITER_COLON <type> #1 DELIMITER_SEMICOLON;
+
+<optional_array_access> ::= <array_access> | î;
+<array_access> ::= DELIMITER_LBRACKET <expression> DELIMITER_RBRACKET;
+
+// BLOCOS
+<block> ::= DELIMITER_LCURLY #6 <optional_stmt_list> #7 DELIMITER_RCURLY;
+
+// ATRIBUICAO
+<var_or_array> ::= ID #3 <optional_array_access>;
+<assignment> ::= <var_or_array> OPERATOR_SINGLE_EQUAL <expression> #4 DELIMITER_SEMICOLON #5;
+
+// EXPRESSOES (Estrutura completa)
+<expression> ::= <logical_or>;
+
+<logical_or> ::= <logical_and> <logical_or_tail>;
+<logical_or_tail> ::= OPERATOR_OR <logical_and> <logical_or_tail> | î;
+
+<logical_and> ::= <bitwise_or> <logical_and_tail>;
+<logical_and_tail> ::= OPERATOR_AND <bitwise_or> <logical_and_tail> | î;
+
+<bitwise_or> ::= <bitwise_xor> <bitwise_or_tail>;
+<bitwise_or_tail> ::= OPERATOR_BIT_OR <bitwise_xor> <bitwise_or_tail> | î;
+
+<bitwise_xor> ::= <bitwise_and> <bitwise_xor_tail>;
+<bitwise_xor_tail> ::= OPERATOR_BIT_XOR <bitwise_and> <bitwise_xor_tail> | î;
+
+<bitwise_and> ::= <equality> <bitwise_and_tail>;
+<bitwise_and_tail> ::= OPERATOR_BIT_AND <equality> <bitwise_and_tail> | î;
+
+<equality> ::= <relational> <equality_tail>;
+<equality_tail> ::= OPERATOR_EQUAL <relational> <equality_tail>
+ | OPERATOR_NOT_EQUAL <relational> <equality_tail>
+ | î;
+
+<relational> ::= <shift> <relational_tail>;
+<relational_tail> ::= OPERATOR_LESS <shift> <relational_tail>
+ | OPERATOR_LESS_EQUAL <shift> <relational_tail>
+ | OPERATOR_GREATER <shift> <relational_tail>
+ | OPERATOR_GREATER_EQUAL <shift> <relational_tail>
+ | î;
+
+<shift> ::= <additive> <shift_tail>;
+<shift_tail> ::= OPERATOR_SHIFT_LEFT <additive> <shift_tail>
+ | OPERATOR_SHIFT_RIGHT <additive> <shift_tail>
+ | î;
+
+<additive> ::= <multiplicative> <additive_tail>;
+<additive_tail> ::= OPERATOR_PLUS <multiplicative> <additive_tail>
+ | OPERATOR_MINUS <multiplicative> <additive_tail>
+ | î;
+
+<multiplicative> ::= <unary> <multiplicative_tail>;
+<multiplicative_tail> ::= OPERATOR_MULTIPLY <unary> <multiplicative_tail>
+ | OPERATOR_DIVIDE <unary> <multiplicative_tail>
+ | OPERATOR_MOD <unary> <multiplicative_tail>
+ | î;
+
+<unary> ::= <unary_op> <unary>
+ | <primary>;
+<unary_op> ::= OPERATOR_MINUS | OPERATOR_NOT | OPERATOR_BIT_NOT;
+
+<primary> ::= <var_or_array>
+ | INTEGER
+ | FLOAT
+ | STRING
+ | <function_call>
+ | DELIMITER_LPAREN <expression> DELIMITER_RPAREN;
+
+// CONDICAO (usada em loops e condicionais)
+<condition> ::= <expression>;
+
+// ESTRUTURAS DE CONTROLE
+<loop> ::= <while_loop>
+ | <for_loop>
+ | <do_while_loop>;
+
+<while_loop> ::= WHILE_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN <block>;
+<for_loop> ::= FOR_KEYWORD DELIMITER_LPAREN <dec> <condition> DELIMITER_SEMICOLON <post_operation> DELIMITER_RPAREN <block>;
+<do_while_loop> ::= DO_KEYWORD <block> WHILE_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN DELIMITER_SEMICOLON;
+
+<post_operation> ::= ID OPERATOR_PLUS OPERATOR_PLUS
+ | ID OPERATOR_MINUS OPERATOR_MINUS;
+
+<conditional> ::= IF_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN <block> <optional_else>;
+<optional_else> ::= ELSE_KEYWORD <block> | î;
+
+// I/O
+<input> ::= LEIA_KEYWORD DELIMITER_LPAREN <var_or_array> DELIMITER_RPAREN DELIMITER_SEMICOLON;
+<output> ::= ESCREVA_KEYWORD DELIMITER_LPAREN <output_expr> DELIMITER_RPAREN DELIMITER_SEMICOLON;
+<output_expr> ::= <expression>;
+
+// SUBROTINAS (Funções/Procedimentos)
+<subroutine_declaration> ::= <return_type_spec> ID #8 DELIMITER_LPAREN <parameter_list_optional> DELIMITER_RPAREN #9 <function_body_block> #10;
+
+<return_type_spec> ::= <type> #11
+                     | VOID_KEYWORD #11; // Ação #11 pega o lexema do token ("int", "float", "void", etc.)
+
+
+<parameter_list_optional> ::= <parameter_list> | î;
+<parameter_list> ::= <parameter> <parameter_list_tail_comma>;
+<parameter_list_tail_comma> ::= DELIMITER_COMMA <parameter> <parameter_list_tail_comma>
+                              | î;
+
+<parameter> ::= <type> #13 ID #12 <optional_array_spec_param_suffix>;
+
+<optional_array_spec_param_suffix> ::= DELIMITER_LBRACKET DELIMITER_RBRACKET <optional_array_spec_param_suffix> #14
+                                     | î #15;
+
+<function_body_block> ::= DELIMITER_LCURLY <optional_stmt_list> DELIMITER_RCURLY;
+
+
+// --- CHAMADA DE SUBROTINA (Mantida simples por enquanto, sem ações detalhadas para argumentos ainda) ---
+<subroutine_call> ::= ID DELIMITER_LPAREN <argument_list_optional> DELIMITER_RPAREN DELIMITER_SEMICOLON;
+<function_call> ::= ID DELIMITER_LPAREN <argument_list_optional> DELIMITER_RPAREN; // Usada em <primary>
+
+
+<argument_list_optional> ::= <argument_list> | î;
+<argument_list> ::= <argument_list> DELIMITER_COMMA <expression> | <expression>;

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; connect-src 'self' http://localhost:3000; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executor Compilador</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+        body {
+            font-family: "Nunito", sans-serif;
+            padding: 2rem;
+            background: #f2f2f2;
+            width: 800px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        textarea#codigo {
+            width: calc(100% - 22px); /* Ajuste para padding/border */
+            min-height: 200px;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #mostrarTabela {
+            background-color: #28a745;
+        }
+         #mostrarTabela:hover {
+            background-color: #1e7e34;
+        }
+
+
+        pre#saida {
+            background: #333; /* Fundo escuro para a saída */
+            color: #f0f0f0;   /* Texto claro */
+            border: 1px solid #444;
+            padding: 1rem;
+            white-space: pre-wrap; /* Mantém quebras de linha e espaços */
+            word-wrap: break-word; /* Quebra palavras longas */
+            min-height: 100px;
+            border-radius: 4px;
+            margin-top: 1rem;
+            box-sizing: border-box;
+            width: calc(100% - 22px); /* Ajuste para padding/border */
+        }
+
+        /* Estilos para o Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6); /* Fundo mais escuro */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; /* Margem menor para centralizar melhor */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 900px; /* Largura máxima */
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Estilo para a tabela de símbolos dentro do modal */
+        #tabelaConteudo table.symbol-table {
+            width: 100%;
+            border-collapse: collapse; /* Remove espaços entre bordas */
+            margin-top: 15px;
+        }
+
+        #tabelaConteudo table.symbol-table th,
+        #tabelaConteudo table.symbol-table td {
+            border: 1px solid #ddd; /* Borda mais suave */
+            padding: 8px;
+            text-align: left;
+        }
+
+        #tabelaConteudo table.symbol-table th {
+            background-color: #f2f2f2; /* Fundo para cabeçalhos */
+            color: #333;
+        }
+         #tabelaConteudo table.symbol-table tr:nth-child(even){background-color: #f9f9f9;}
+         #tabelaConteudo table.symbol-table tr:hover {background-color: #e2e2e2;}
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Executor de Código Compilador</h1>
+        <textarea id="codigo" placeholder="Digite seu código aqui..."></textarea>
+        <button onclick="executarCodigo()">Executar</button>
+        <button id="mostrarTabela" onclick="abrirModal()" style="display: none;">Mostrar Tabela de Símbolos</button>
+        
+        <h2>Saída do Compilador:</h2>
+        <pre id="saida">Aguardando execução...</pre>
+    </div>
+
+    <div id="tabelaModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="fecharModal()">&times;</span>
+            <h2>Tabela de Símbolos</h2>
+            <div id="tabelaConteudo">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let tabelaHTML = ""; // Variável global para armazenar o HTML da tabela
+
+        async function executarCodigo() {
+            const codigo = document.getElementById('codigo').value;
+            const saidaElement = document.getElementById('saida');
+            const mostrarTabelaBtn = document.getElementById('mostrarTabela');
+
+            saidaElement.textContent = 'Executando...'; // Feedback imediato
+            mostrarTabelaBtn.style.display = 'none'; // Esconde o botão durante a execução
+
+            try {
+                const resposta = await fetch('http://localhost:3000/executar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        codigo
+                    })
+                });
+
+                const json = await resposta.json();
+                console.log('Resposta do backend:', json);
+
+                if (resposta.ok) {
+                    saidaElement.textContent = json.saida;
+                    if (json.avisos) {
+                         saidaElement.textContent += "\n\n" + json.avisos;
+                    }
+                } else {
+                    // Se o servidor retornou um erro (ex: status 400)
+                    saidaElement.textContent = "Erro na compilação:\n" + (json.erro || json.saida || "Erro desconhecido do servidor.");
+                }
+                
+                tabelaHTML = json.tabela || "<p>Nenhuma tabela de símbolos retornada.</p>"; 
+
+                // Mostra o botão apenas se tabelaHTML contiver uma tabela real
+                if (tabelaHTML && tabelaHTML.toLowerCase().includes("<table")) {
+                    mostrarTabelaBtn.style.display = 'inline-block';
+                } else {
+                    mostrarTabelaBtn.style.display = 'none';
+                }
+
+            } catch (err) {
+                console.error('Erro na requisição fetch:', err);
+                saidaElement.textContent = 'Erro ao conectar com o servidor: ' + err.message;
+                mostrarTabelaBtn.style.display = 'none';
+            }
+        }
+
+        function abrirModal() {
+            document.getElementById('tabelaConteudo').innerHTML = tabelaHTML;
+            document.getElementById('tabelaModal').style.display = "block";
+        }
+
+        function fecharModal() {
+            document.getElementById('tabelaModal').style.display = "none";
+        }
+
+        // Fechar o modal se o usuário clicar fora do conteúdo do modal
+        window.onclick = function (event) {
+            const modal = document.getElementById('tabelaModal');
+            if (event.target == modal) {
+                fecharModal();
+            }
+        }
+    </script>
+</body>
+
+</html>
