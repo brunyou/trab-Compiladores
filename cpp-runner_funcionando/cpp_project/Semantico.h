@@ -2,51 +2,74 @@
 #define SEMANTICO_H
 
 #include "Token.h"
-#include "SemanticError.h" 
+#include "SemanticError.h"
 #include "SymbolTable.h"
-#include "Symbol.h"      // Para ParameterInfo
+#include "Symbol.h"
 #include <string>
 #include <vector>
 #include <optional>
+#include <sstream> // Necessário para geração de código
+#include <stack>   // Necessário para geração de código (futuro)
 
 class Semantico
 {
 public:
-    Semantico(SymbolTable& table) : 
-        symbolTable(table), 
+    // Construtor inicializa os novos membros
+    Semantico(SymbolTable& table) :
+        symbolTable(table),
         currentLHS_idPosition(-1),
-        pendingParamIsArray(false), // Inicializa flag de parâmetro array
-        paramPositionCounter(-1)    // Inicializa contador de posição de parâmetro para uma função
+        pendingParamIsArray(false),
+        paramPositionCounter(-1),
+        label_counter(0),        // Inicializa contador de rótulos
+        temp_address_start(1000) // Endereço inicial para temporários
         {}
 
+    // Ação principal
     void executeAction(int action, const Token *token);
+
+    // Função original de formatação da tabela (mantida)
     std::string formatarTabelaSimbolos();
+
+    // Funções existentes
     std::vector<std::string> getCompilationWarnings() const { return compilationWarnings; }
 
-private:
-    SymbolTable& symbolTable; 
+    // Nova função para obter o código gerado
+    std::string get_generated_code();
 
-    // Para declarações de variáveis simples
+private:
+    SymbolTable& symbolTable;
+
+    // --- Membros Existentes (Semântica) ---
     std::vector<std::string> currentIdList;
     std::vector<int> currentIdPositions;
-
-    // Para comandos de atribuição
     std::string currentLHS_idName;
     std::string currentLHS_idType;
     int currentLHS_idPosition;
-    std::string currentRHS_expressionType; 
+    std::string currentRHS_expressionType;
+    std::string pendingFunctionReturnType;
+    std::string currentProcessingFunctionName;
+    std::string currentFunctionDeclarationScope;
+    std::vector<ParameterInfo> currentFunctionParamsInfoList;
+    std::string pendingParamType;
+    bool pendingParamIsArray;
+    int paramPositionCounter;
+    std::vector<std::string> compilationWarnings;
 
-    // Para declaração de funções e parâmetros
-    std::string pendingFunctionReturnType;          // Armazena o tipo de retorno da função sendo declarada
-    std::string currentProcessingFunctionName;      // Nome da função/procedimento atual
-    std::string currentFunctionDeclarationScope;    // Escopo ONDE a função foi declarada
-    std::vector<ParameterInfo> currentFunctionParamsInfoList; // Coleta ParameterInfo para a função atual
-    
-    std::string pendingParamType;   // Tipo do parâmetro individual sendo processado
-    bool pendingParamIsArray;       // Se o parâmetro individual atual é um array
-    int paramPositionCounter;       // Para a 'posicaoParametro' no símbolo do parâmetro (0, 1, 2...)
+    // --- Novos Membros para Geração de Código ---
+    std::vector<std::string> data_section;
+    std::vector<std::string> text_section;
+    int label_counter;
+    int temp_address_start;
+    // std::stack<std::string> code_gen_stack; // Exemplo para futuro
 
-    std::vector<std::string> compilationWarnings; 
+    // --- Novas Funções Auxiliares (Geração de Código) ---
+    std::string new_label();
+    std::string new_temp();
+    void free_temp(const std::string& temp);
+    void gera_cod(const std::string& instruction,
+                  const std::string& arg1 = "",
+                  const std::string& arg2 = "");
+    void gera_data(const std::string& label, const std::string& value);
 };
 
-#endif
+#endif // SEMANTICO_H

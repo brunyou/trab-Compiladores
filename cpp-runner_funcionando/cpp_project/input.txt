@@ -1,8 +1,3 @@
-resultado: int;
-int soma(int a, int b) {
-    
-resultado = 2;
-    resultado = a + b;
-}
-
-
+var : int;
+leia(var); 
+escreva(var);
