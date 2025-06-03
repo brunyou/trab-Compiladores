@@ -1,10 +1,6 @@
 .data
-    var:	0
+    a:	0
 
 .text
 _PRINCIPAL:
-    LD	$in_port
-    STO	var
-    LD	var
-    STO	$out_port
     HLT	0

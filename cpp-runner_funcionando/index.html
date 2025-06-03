@@ -55,6 +55,7 @@
             cursor: pointer;
             font-size: 16px;
             margin-right: 10px;
+            margin-bottom: 5px; /* Adicionado para espaçamento se quebrar linha */
         }
 
         button:hover {
@@ -62,10 +63,18 @@
         }
 
         #mostrarTabela {
-            background-color: #28a745;
+            background-color: #28a745; /* Verde */
         }
          #mostrarTabela:hover {
             background-color: #1e7e34;
+        }
+
+        #mostrarCodigoBIP { /* Novo estilo para o botão do Código BIP */
+            background-color: #ffc107; /* Amarelo/Âmbar */
+            color: black;
+        }
+        #mostrarCodigoBIP:hover {
+            background-color: #e0a800;
         }
 
 
@@ -83,7 +92,7 @@
             width: calc(100% - 22px); /* Ajuste para padding/border */
         }
 
-        /* Estilos para o Modal */
+        /* Estilos para o Modal (comum para ambos) */
         .modal {
             display: none;
             position: fixed;
@@ -93,16 +102,16 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0, 0, 0, 0.6); /* Fundo mais escuro */
+            background-color: rgba(0, 0, 0, 0.6);
         }
 
         .modal-content {
             background-color: #fefefe;
-            margin: 10% auto; /* Margem menor para centralizar melhor */
+            margin: 10% auto;
             padding: 20px;
             border: 1px solid #888;
             width: 80%;
-            max-width: 900px; /* Largura máxima */
+            max-width: 900px;
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
@@ -124,23 +133,43 @@
         /* Estilo para a tabela de símbolos dentro do modal */
         #tabelaConteudo table.symbol-table {
             width: 100%;
-            border-collapse: collapse; /* Remove espaços entre bordas */
+            border-collapse: collapse;
             margin-top: 15px;
         }
 
         #tabelaConteudo table.symbol-table th,
         #tabelaConteudo table.symbol-table td {
-            border: 1px solid #ddd; /* Borda mais suave */
+            border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
 
         #tabelaConteudo table.symbol-table th {
-            background-color: #f2f2f2; /* Fundo para cabeçalhos */
+            background-color: #f2f2f2;
             color: #333;
         }
          #tabelaConteudo table.symbol-table tr:nth-child(even){background-color: #f9f9f9;}
          #tabelaConteudo table.symbol-table tr:hover {background-color: #e2e2e2;}
+
+        /* Estilo para o conteúdo do código BIP no modal */
+        pre#codigoBIPConteudo {
+            background: #272822; /* Tema escuro para código */
+            color: #f8f8f2;     /* Texto claro */
+            border: 1px solid #444;
+            padding: 1rem;
+            white-space: pre;   /* Preserva espaços e quebras de linha EXATAMENTE */
+            word-wrap: normal;  /* Não quebra palavras, permite scroll horizontal */
+            overflow-x: auto;   /* Scroll horizontal se necessário */
+            min-height: 200px;  /* Altura mínima */
+            max-height: 70vh;   /* Altura máxima, usa scroll vertical depois disso */
+            overflow-y: auto;   /* Scroll vertical se necessário */
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            box-sizing: border-box;
+            width: 100%;
+        }
 
     </style>
 </head>
@@ -150,31 +179,43 @@
         <h1>Executor de Código Compilador</h1>
         <textarea id="codigo" placeholder="Digite seu código aqui..."></textarea>
         <button onclick="executarCodigo()">Executar</button>
-        <button id="mostrarTabela" onclick="abrirModal()" style="display: none;">Mostrar Tabela de Símbolos</button>
-        
+        <button id="mostrarTabela" onclick="abrirModalTabela()" style="display: none;">Mostrar Tabela de Símbolos</button>
+        <button id="mostrarCodigoBIP" onclick="abrirModalCodigoBIP()" style="display: none;">Mostrar Código BIP</button>
+
         <h2>Saída do Compilador:</h2>
         <pre id="saida">Aguardando execução...</pre>
     </div>
 
     <div id="tabelaModal" class="modal">
         <div class="modal-content">
-            <span class="close-button" onclick="fecharModal()">&times;</span>
+            <span class="close-button" onclick="fecharModalTabela()">&times;</span>
             <h2>Tabela de Símbolos</h2>
             <div id="tabelaConteudo">
                 </div>
         </div>
     </div>
 
+    <div id="codigoBIPModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="fecharModalCodigoBIP()">&times;</span>
+            <h2>Código BIP Gerado</h2>
+            <pre id="codigoBIPConteudo"></pre> 
+        </div>
+    </div>
+
     <script>
-        let tabelaHTML = ""; // Variável global para armazenar o HTML da tabela
+        let tabelaHTMLGlobal = ""; // Variável global para armazenar o HTML da tabela
+        let codigoBIPGlobal = "";  // Variável global para armazenar o Código BIP
 
         async function executarCodigo() {
             const codigo = document.getElementById('codigo').value;
             const saidaElement = document.getElementById('saida');
             const mostrarTabelaBtn = document.getElementById('mostrarTabela');
+            const mostrarCodigoBIPBtn = document.getElementById('mostrarCodigoBIP'); // Novo botão
 
-            saidaElement.textContent = 'Executando...'; // Feedback imediato
-            mostrarTabelaBtn.style.display = 'none'; // Esconde o botão durante a execução
+            saidaElement.textContent = 'Executando...';
+            mostrarTabelaBtn.style.display = 'none';
+            mostrarCodigoBIPBtn.style.display = 'none'; // Esconde novo botão também
 
             try {
                 const resposta = await fetch('http://localhost:3000/executar', {
@@ -191,45 +232,66 @@
                 console.log('Resposta do backend:', json);
 
                 if (resposta.ok) {
-                    saidaElement.textContent = json.saida;
-                    if (json.avisos) {
+                    saidaElement.textContent = json.saida; // Mensagem principal (ex: "Compilado com sucesso!")
+                    if (json.avisos && json.avisos.trim() !== "") { // Adiciona avisos se existirem
                          saidaElement.textContent += "\n\n" + json.avisos;
                     }
                 } else {
-                    // Se o servidor retornou um erro (ex: status 400)
                     saidaElement.textContent = "Erro na compilação:\n" + (json.erro || json.saida || "Erro desconhecido do servidor.");
                 }
                 
-                tabelaHTML = json.tabela || "<p>Nenhuma tabela de símbolos retornada.</p>"; 
+                tabelaHTMLGlobal = json.tabela || "<p>Nenhuma tabela de símbolos retornada.</p>";
+                codigoBIPGlobal = json.codigoBIP || ""; // Pega o código BIP ou string vazia
 
-                // Mostra o botão apenas se tabelaHTML contiver uma tabela real
-                if (tabelaHTML && tabelaHTML.toLowerCase().includes("<table")) {
+                // Mostra o botão da tabela apenas se tabelaHTMLGlobal contiver uma tabela real
+                if (tabelaHTMLGlobal && tabelaHTMLGlobal.toLowerCase().includes("<table")) {
                     mostrarTabelaBtn.style.display = 'inline-block';
                 } else {
                     mostrarTabelaBtn.style.display = 'none';
+                }
+
+                // Mostra o botão do código BIP apenas se codigoBIPGlobal não estiver vazio
+                if (codigoBIPGlobal && codigoBIPGlobal.trim() !== "") {
+                    mostrarCodigoBIPBtn.style.display = 'inline-block';
+                } else {
+                    mostrarCodigoBIPBtn.style.display = 'none';
                 }
 
             } catch (err) {
                 console.error('Erro na requisição fetch:', err);
                 saidaElement.textContent = 'Erro ao conectar com o servidor: ' + err.message;
                 mostrarTabelaBtn.style.display = 'none';
+                mostrarCodigoBIPBtn.style.display = 'none';
             }
         }
 
-        function abrirModal() {
-            document.getElementById('tabelaConteudo').innerHTML = tabelaHTML;
+        function abrirModalTabela() {
+            document.getElementById('tabelaConteudo').innerHTML = tabelaHTMLGlobal;
             document.getElementById('tabelaModal').style.display = "block";
         }
 
-        function fecharModal() {
+        function fecharModalTabela() {
             document.getElementById('tabelaModal').style.display = "none";
         }
 
-        // Fechar o modal se o usuário clicar fora do conteúdo do modal
+        function abrirModalCodigoBIP() {
+            document.getElementById('codigoBIPConteudo').textContent = codigoBIPGlobal; // Usa textContent para <pre>
+            document.getElementById('codigoBIPModal').style.display = "block";
+        }
+
+        function fecharModalCodigoBIP() {
+            document.getElementById('codigoBIPModal').style.display = "none";
+        }
+
+        // Fechar os modais se o usuário clicar fora do conteúdo
         window.onclick = function (event) {
-            const modal = document.getElementById('tabelaModal');
-            if (event.target == modal) {
-                fecharModal();
+            const tabelaModal = document.getElementById('tabelaModal');
+            const bipModal = document.getElementById('codigoBIPModal');
+            if (event.target == tabelaModal) {
+                fecharModalTabela();
+            }
+            if (event.target == bipModal) {
+                fecharModalCodigoBIP();
             }
         }
     </script>
