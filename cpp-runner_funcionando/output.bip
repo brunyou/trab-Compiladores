@@ -1,6 +1,14 @@
 .data
-    a:	0
+    a:	0, 0, 0, 0, 0
 
 .text
 _PRINCIPAL:
+    LDI	2
+    STO	$indr
+    LDI	31
+    STOV	a
+    LDI	2
+    STO	$indr
+    LDV	a
+    STO	$out_port
     HLT	0
