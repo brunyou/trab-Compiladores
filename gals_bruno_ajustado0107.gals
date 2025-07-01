@@ -127,6 +127,7 @@ DELIMITER_RCURLY : "}"
 <factor>
 <relation>
 <relation_tail>
+<op_relacional>
 <simple>
 <primary>
 <subroutine_declaration>
@@ -162,93 +163,69 @@ DELIMITER_RCURLY : "}"
 
 <expression_stmt> ::= <expression> DELIMITER_SEMICOLON;
 
-// --- REGRAS DE DECLARAÇÃO PARA "id{tam_opcional} : tipo;" ---
-// Ação #2: Guarda o nome do ID pendente e sua posição.
-// Ação #28: Chamada após o INTEGER do tamanho do vetor (dentro de {}). Registra que o ID pendente é um VETOR.
-// Ação #29: Chamada se não há {TAMANHO} (î). Registra que o ID pendente é um ESCALAR.
-// Ação #1: Chamada após <type>. Processa a LISTA de IDs/vetores pendentes com o tipo reconhecido.
 <dec_stmt> ::= <id_list_for_decl> DELIMITER_COLON <type> #1 DELIMITER_SEMICOLON;
-
 <id_list_for_decl> ::= <single_id_or_array_decl> <more_ids_for_decl>;
-
-<more_ids_for_decl> ::= DELIMITER_COMMA <single_id_or_array_decl> <more_ids_for_decl>
-                      | î;
-
+<more_ids_for_decl> ::= DELIMITER_COMMA <single_id_or_array_decl> <more_ids_for_decl> | î;
 <single_id_or_array_decl> ::= ID #2 <optional_curly_array_spec_for_decl>;
-
-<optional_curly_array_spec_for_decl> ::= DELIMITER_LCURLY INTEGER #28 DELIMITER_RCURLY
-                                       | î #29;
-// --- FIM DAS REGRAS DE DECLARAÇÃO ---
+<optional_curly_array_spec_for_decl> ::= DELIMITER_LCURLY INTEGER #28 DELIMITER_RCURLY | î #29;
 
 <type> ::= INTEGER_KEYWORD | FLOAT_KEYWORD | STRING_KEYWORD | BOOL_KEYWORD
          | CHAR_KEYWORD | DOUBLE_KEYWORD | VOID_KEYWORD;
 
-// #6 e #7 para escopo de bloco
 <block> ::= DELIMITER_LCURLY #6 <optional_stmt_list> #7 DELIMITER_RCURLY;
 
-// --- ATRIBUIÇÃO (LHS usa colchetes [] para acesso) ---
-// #3 (ID do LHS), #4 (Após Expr RHS), #5 (Fim da Atribuição)
 <assignment_stmt> ::= <var_or_array_lhs> OPERATOR_SINGLE_EQUAL <expression> #4 DELIMITER_SEMICOLON #5;
 <var_or_array_lhs> ::= ID #3 <optional_array_access>;
 
-// --- ACESSO A VETOR (USA COLCHETES []) ---
-// #23 (Após expr. índice), #24 (Após ]), #25 (Escalar)
-<optional_array_access> ::= DELIMITER_LBRACKET <expression> #23 DELIMITER_RBRACKET #24
-                        | î #25;
+<optional_array_access> ::= DELIMITER_LBRACKET <expression> #23 DELIMITER_RBRACKET #24 | î #25;
 
-<post_operation> ::= ID OPERATOR_PLUS OPERATOR_PLUS
-                   | ID OPERATOR_MINUS OPERATOR_MINUS;
+<post_operation> ::= ID OPERATOR_PLUS OPERATOR_PLUS | ID OPERATOR_MINUS OPERATOR_MINUS;
 
-<conditional> ::= IF_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN <block> <optional_else>;
-<optional_else> ::= ELSE_KEYWORD <block> | î;
+// --- REGRAS CONDICIONAIS MODIFICADAS ---
+// Ação #35: Após a condição, gera o pulo condicional.
+// Ação #36: Antes do bloco 'else', gera o pulo incondicional para o fim.
+// Ação #37: No final da estrutura, posiciona o rótulo de destino.
+<conditional> ::= IF_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN #35 <block> <optional_else>;
 
-// --- INPUT (usa colchetes [] para acesso) ---
-// #26 (ID do LEIA), #16 (Fim do LEIA)
+<optional_else> ::= ELSE_KEYWORD #36 <block> #37
+                  | î #37;
+// --- FIM DAS REGRAS CONDICIONAIS ---
+
 <input_stmt> ::= LEIA_KEYWORD DELIMITER_LPAREN ID #26 <optional_array_access> #16 DELIMITER_RPAREN DELIMITER_SEMICOLON;
-
-// --- OUTPUT ---
-// #17 (Fim do ESCREVA)
 <output_stmt> ::= ESCREVA_KEYWORD DELIMITER_LPAREN <expression> #17 DELIMITER_RPAREN DELIMITER_SEMICOLON;
-
 <condition> ::= <expression>;
 
-// --- EXPRESSÕES (ESTRUTURA DE LOOP EXPLÍCITO PARA OPERAÇÕES) ---
-// Ação #30: INIT_EXPR_ACCUMULATOR (após o primeiro <term> da expressão)
+// --- EXPRESSÕES (ESTRUTURA EXISTENTE) ---
 <expression> ::= <term> #30 <expression_loop_tail>;
+<expression_loop_tail> ::= <op_term_actions> <expression_loop_tail> | î;
+<op_term_actions> ::= OPERATOR_PLUS #21 <term> #31 | OPERATOR_MINUS #22 <term> #32;
 
-// <expression_loop_tail> lida com a sequência de operações
-<expression_loop_tail> ::= <op_term_actions> <expression_loop_tail>
-                         | î;
-
-// <op_term_actions> agrupa um operador, o termo seguinte, e a ação para executar a operação
-// Ação #21: Após OPERATOR_PLUS (guarda o operador)
-// Ação #31: PERFORM_ADD (após o <term> que segue o '+')
-// Ação #22: Após OPERATOR_MINUS (guarda o operador)
-// Ação #32: PERFORM_SUB (após o <term> que segue o '-')
-<op_term_actions> ::= OPERATOR_PLUS #21 <term> #31
-                    | OPERATOR_MINUS #22 <term> #32;
-// --- FIM DAS REGRAS DE EXPRESSÃO MODIFICADAS ---
-
-<term> ::= <factor> <term_tail>; // Para futuras multiplicações/divisões, elas entrariam aqui
+<term> ::= <factor> <term_tail>;
 <term_tail> ::= OPERATOR_MULTIPLY <factor> <term_tail>
               | OPERATOR_DIVIDE <factor> <term_tail>
               | OPERATOR_MOD <factor> <term_tail>
               | î;
 
-<factor> ::= OPERATOR_MINUS <factor>
-           | <relation>;
+<factor> ::= OPERATOR_MINUS <factor> | <relation>;
 
-<relation> ::= <simple> <relation_tail>;
-<relation_tail> ::= OPERATOR_GREATER <simple>
-                  | OPERATOR_LESS <simple>
-                  | OPERATOR_GREATER_EQUAL <simple>
-                  | OPERATOR_LESS_EQUAL <simple>
-                  | OPERATOR_EQUAL <simple>
-                  | OPERATOR_NOT_EQUAL <simple>
+// --- REGRAS DE RELAÇÃO MODIFICADAS ---
+// Ação #33: Guarda o operador relacional.
+// Ação #34: Realiza a comparação dos operandos.
+<relation> ::= <simple> #38 <relation_tail>;
+
+<relation_tail> ::= <op_relacional> #33 <simple> #34
                   | î;
 
+// NOVO não-terminal para agrupar operadores relacionais
+<op_relacional> ::= OPERATOR_GREATER
+                  | OPERATOR_LESS
+                  | OPERATOR_GREATER_EQUAL
+                  | OPERATOR_LESS_EQUAL
+                  | OPERATOR_EQUAL
+                  | OPERATOR_NOT_EQUAL;
+// --- FIM DAS REGRAS DE RELAÇÃO ---
+
 <simple> ::= <primary>;
-// #18 (ID), #19 (Literal), #27 (LOAD após ID/acesso_vetor usando [])
 <primary> ::= INTEGER #19
             | ID #18 <optional_array_access> #27
             | FLOAT #19
@@ -256,23 +233,22 @@ DELIMITER_RCURLY : "}"
             | <function_call>
             | DELIMITER_LPAREN <expression> DELIMITER_RPAREN;
 
-// --- FUNÇÕES ---
+// --- FUNÇÕES (SEM ALTERAÇÕES) ---
 <subroutine_declaration> ::= <return_type_spec> ID #8 DELIMITER_LPAREN <parameter_list_optional> DELIMITER_RPAREN #9 <function_body_block> #10;
 <return_type_spec> ::= <type> #11 | VOID_KEYWORD #11;
 <parameter_list_optional> ::= <parameter_list> | î;
 <parameter_list> ::= <parameter> <parameter_list_tail_comma>;
 <parameter_list_tail_comma> ::= DELIMITER_COMMA <parameter> <parameter_list_tail_comma> | î;
 <parameter> ::= <type> #13 ID #12 <optional_array_spec_param_suffix>;
-<optional_array_spec_param_suffix> ::= DELIMITER_LBRACKET DELIMITER_RBRACKET #14 <optional_array_spec_param_suffix>
-                                     | î #15;
+<optional_array_spec_param_suffix> ::= DELIMITER_LBRACKET DELIMITER_RBRACKET #14 <optional_array_spec_param_suffix> | î #15;
 <function_body_block> ::= DELIMITER_LCURLY <optional_stmt_list> DELIMITER_RCURLY;
 <function_call> ::= ID DELIMITER_LPAREN <argument_list_optional> DELIMITER_RPAREN;
 <argument_list_optional> ::= <argument_list> | î;
 <argument_list> ::= <expression> <argument_list_tail>;
 <argument_list_tail> ::= DELIMITER_COMMA <expression> <argument_list_tail> | î;
 
-// --- LOOPS ---
+// --- LOOPS (SEM ALTERAÇÕES POR ENQUANTO) ---
 <loop> ::= <while_loop> | <for_loop> | <do_while_loop>;
-<while_loop> ::= WHILE_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN <block>;
+<while_loop> ::= WHILE_KEYWORD #39 DELIMITER_LPAREN <condition> DELIMITER_RPAREN #40 <block> #41;
 <for_loop> ::= FOR_KEYWORD DELIMITER_LPAREN <dec_stmt> <condition> DELIMITER_SEMICOLON <post_operation> DELIMITER_RPAREN <block>;
-<do_while_loop> ::= DO_KEYWORD <block> WHILE_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN DELIMITER_SEMICOLON;
+<do_while_loop> ::= DO_KEYWORD #42 <block> WHILE_KEYWORD DELIMITER_LPAREN <condition> DELIMITER_RPAREN #43 DELIMITER_SEMICOLON;

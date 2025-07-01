@@ -88,7 +88,7 @@ private:
     int temp_address_start;
 
     // --- Membros para Acumulador de Expressão Aritmética ---
-    std::string current_expression_accumulator_temp;
+    std::stack<std::string> operand_stack;
     std::string last_operator_token;
 
     // --- Funções Auxiliares ---
@@ -103,6 +103,8 @@ private:
         // --- NOVOS MEMBROS PARA CONTROLE CONDICIONAL ---
     std::string currentRelationalOperator;
     std::stack<std::string> labels_stack;
+
+    
 };
 
 #endif // SEMANTICO_H
