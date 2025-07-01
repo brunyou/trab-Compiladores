@@ -590,6 +590,115 @@ void Semantico::executeAction(int action, const Token *token) {
             last_operator_token.clear();
             break;
         }
+        
+        case 33: { // #33: Após <op_relacional>
+            if (!token) throw SemanticError("Token nulo para Ação #33 (operador relacional).", -1);
+            this->currentRelationalOperator = token->getLexeme();
+            std::cerr << "DEBUG - Action #33: Operador relacional '" << this->currentRelationalOperator << "' armazenado." << std::endl;
+            break;
+        }
+
+        // Realiza a comparação entre o operando da esquerda (já acumulado) e o da direita (recém-processado).
+        case 34: { // #34: Após o <simple> do lado direito da relação
+            if (this->currentRelationalOperator.empty()) {
+                // Isso pode acontecer se a expressão não for uma relação (ex: if (a+b) ). Não fazemos nada.
+                std::cerr << "DEBUG - Action #34: Nenhuma operação relacional pendente. Ignorando." << std::endl;
+                break;
+            }
+            if (this->current_expression_accumulator_temp.empty()) {
+                throw SemanticError("Erro interno: Lado esquerdo da comparação não foi acumulado em um temporário.", (token ? token->getPosition() : -1));
+            }
+
+            // O operando da direita está no acumulador do BIP (processado por #19 ou #27).
+            // O operando da esquerda está no nosso temporário 'current_expression_accumulator_temp'.
+            std::string temp_direita = new_temp();
+            gera_cod("STO", temp_direita); // Salva o operando da direita
+            gera_cod("LD", current_expression_accumulator_temp); // Carrega o operando da esquerda
+            gera_cod("SUB", temp_direita); // Calcula (esquerda - direita). O resultado fica no acumulador.
+
+            // Salva o resultado da comparação de volta no temporário principal da expressão.
+            gera_cod("STO", current_expression_accumulator_temp);
+            free_temp(temp_direita);
+            std::cerr << "DEBUG - Action #34: Comparação '" << currentRelationalOperator << "' realizada. Resultado em " << current_expression_accumulator_temp << std::endl;
+            break;
+        }
+
+        // Gera o desvio condicional com base no resultado da expressão/comparação.
+        case 35: { // #35: Após ')' da <condition> do IF
+            if (current_expression_accumulator_temp.empty()) {
+                 throw SemanticError("Erro interno: Condição do IF não produziu um resultado em temporário.", (token ? token->getPosition() : -1));
+            }
+
+            // Carrega o resultado final da condição para o acumulador do BIP.
+            gera_cod("LD", current_expression_accumulator_temp);
+            free_temp(current_expression_accumulator_temp);
+            current_expression_accumulator_temp.clear();
+
+            std::string label_destino = new_label(); // Rótulo para pular se a condição for FALSA.
+            labels_stack.push(label_destino);
+
+            // Mapeia o operador para a instrução de desvio INVERSA do BIP.
+            if (currentRelationalOperator == ">")       gera_cod("BLE", label_destino);
+            else if (currentRelationalOperator == "<")  gera_cod("BGE", label_destino);
+            else if (currentRelationalOperator == ">=") gera_cod("BLT", label_destino);
+            else if (currentRelationalOperator == "<=") gera_cod("BGT", label_destino);
+            else if (currentRelationalOperator == "==") gera_cod("BNE", label_destino);
+            else if (currentRelationalOperator == "!=") gera_cod("BEQ", label_destino);
+            else {
+                // Caso sem operador relacional (ex: if(variavel)).
+                // A condição é falsa se o valor for 0.
+                gera_cod("BEQ", label_destino);
+            }
+
+            currentRelationalOperator.clear(); // Limpa para a próxima condição.
+            std::cerr << "DEBUG - Action #35: Desvio condicional para " << label_destino << " gerado." << std::endl;
+            break;
+        }
+
+        // Trata o início do bloco 'else'.
+        case 36: { // #36: Após a palavra-chave ELSE
+            if (labels_stack.empty()) {
+                throw SemanticError("Erro de aninhamento: 'else' sem um 'if' correspondente.", (token ? token->getPosition() : -1));
+            }
+            std::string label_fim_if = new_label(); // Novo rótulo para o fim de toda a estrutura.
+            std::string label_do_if = labels_stack.top(); // Pega o rótulo que o if usaria para pular.
+            labels_stack.pop();
+
+            gera_cod("JMP", label_fim_if); // Se o bloco IF foi executado, pula o bloco ELSE.
+            text_section.push_back(label_do_if + ":"); // Posiciona o rótulo para onde o IF pula.
+
+            labels_stack.push(label_fim_if); // Empilha o novo rótulo de fim para a ação #37.
+            std::cerr << "DEBUG - Action #36: JMP para " << label_fim_if << " gerado; Rótulo " << label_do_if << " posicionado." << std::endl;
+            break;
+        }
+
+        // Finaliza a estrutura 'if' ou 'if-else', posicionando o rótulo final.
+        case 37: { // #37: No final da estrutura condicional.
+            if (labels_stack.empty()) {
+                throw SemanticError("Erro de aninhamento: fim de condicional inesperado.", (token ? token->getPosition() : -1));
+            }
+            std::string label_final = labels_stack.top();
+            labels_stack.pop();
+            text_section.push_back(label_final + ":"); // Adiciona o rótulo diretamente ao código.
+            std::cerr << "DEBUG - Action #37: Rótulo final '" << label_final << "' posicionado." << std::endl;
+            break;
+        }
+         case 38: { // #38: Após o primeiro <simple> de uma <relation>
+            // O valor do operando esquerdo (ex: 'a' em "a > b") acabou de ser carregado
+            // para o acumulador do BIP pela ação #27.
+            if (!current_expression_accumulator_temp.empty()) {
+                // Em casos futuros mais complexos, talvez seja preciso gerenciar uma pilha de temps.
+                // Por agora, apenas avisamos e sobrescrevemos.
+                std::cerr << "AVISO - Action #38: Sobrescrevendo temporário de expressão existente: "
+                          << current_expression_accumulator_temp << std::endl;
+                free_temp(current_expression_accumulator_temp);
+            }
+            
+            current_expression_accumulator_temp = new_temp();
+            gera_cod("STO", current_expression_accumulator_temp);
+            std::cerr << "DEBUG - Action #38: Operando esquerdo da relação salvo em " << current_expression_accumulator_temp << std::endl;
+            break;
+        }
 
         default:
             std::cerr << "AVISO - Ação semântica #" << action

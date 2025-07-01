@@ -1,2 +1,10 @@
 a : int;
-a = 1;
+b : int;
+a = 2;
+b = 3;
+
+if (a > b) {
+  escreva(a);
+} else {
+ escreva(b);
+}

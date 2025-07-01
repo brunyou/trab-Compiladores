@@ -99,6 +99,10 @@ private:
                   const std::string& arg1 = "",
                   const std::string& arg2 = "");
     void gera_data(const std::string& label, const std::string& value, int count = 1);
+
+        // --- NOVOS MEMBROS PARA CONTROLE CONDICIONAL ---
+    std::string currentRelationalOperator;
+    std::stack<std::string> labels_stack;
 };
 
 #endif // SEMANTICO_H

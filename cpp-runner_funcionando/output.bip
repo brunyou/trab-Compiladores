@@ -1,11 +1,51 @@
 .data
     a:	0
+    b:	0
     T1000:	0
+    T1001:	0
+    T1002:	0
+    T1003:	0
+    T1004:	0
+    T1005:	0
+    T1006:	0
+    T1007:	0
+    T1008:	0
+    T1009:	0
+    T1010:	0
 
 .text
 _PRINCIPAL:
-    LDI	1
+    LDI	2
     STO	T1000
-    LD	T1000
+    STO	T1001
+    LD	T1001
     STO	a
+    LDI	3
+    STO	T1002
+    STO	T1003
+    LD	T1003
+    STO	b
+    LD	a
+    STO	T1004
+    LD	b
+    STO	T1005
+    LD	T1004
+    SUB	T1005
+    STO	T1004
+    STO	T1006
+    LD	T1006
+    BLE	L0
+    LD	a
+    STO	T1007
+    STO	T1008
+    LD	T1008
+    STO	$out_port
+    JMP	L1
+L0:
+    LD	b
+    STO	T1009
+    STO	T1010
+    LD	T1010
+    STO	$out_port
+L1:
     HLT	0
