@@ -1,70 +1,11 @@
 .data
-    x:	0
-    z:	0
-    b:	0
+    a:	0
     T1000:	0
-    T1001:	0
-    T1002:	0
-    T1003:	0
-    T1004:	0
-    T1005:	0
-    T1006:	0
-    T1007:	0
-    T1008:	0
-    T1009:	0
-    T1010:	0
-    T1011:	0
-    T1012:	0
-    T1013:	0
-    T1014:	0
-    T1015:	0
 
 .text
 _PRINCIPAL:
-    LDI	3
+    LDI	1
     STO	T1000
     LD	T1000
-    STO	b
-    LDI	2
-    STO	T1001
-    LDI	1
-    STO	T1002
-    LD	T1001
-    ADD	T1002
-    STO	T1003
-    LDI	3
-    STO	T1004
-    LD	T1003
-    ADD	T1004
-    STO	T1005
-    LD	b
-    STO	T1006
-    LD	T1005
-    ADD	T1006
-    STO	T1007
-    LD	T1007
-    STO	x
-    LD	x
-    STO	T1008
-    LDI	1
-    STO	T1009
-    LD	T1008
-    ADD	T1009
-    STO	T1010
-    LD	b
-    STO	T1011
-    LD	T1010
-    SUB	T1011
-    STO	T1012
-    LD	T1012
-    STO	z
-    LD	x
-    STO	T1013
-    LDI	1
-    STO	T1014
-    LD	T1013
-    ADD	T1014
-    STO	T1015
-    LD	T1015
-    STO	x
+    STO	a
     HLT	0
