@@ -103,8 +103,14 @@ private:
         // --- NOVOS MEMBROS PARA CONTROLE CONDICIONAL ---
     std::string currentRelationalOperator;
     std::stack<std::string> labels_stack;
-
     
+  // --- Membros para o laço FOR ---
+    bool is_in_for_post_op_capture;
+    std::vector<std::string> for_post_op_code_buffer;
+
+    // --- NOVOS MEMBROS PARA O BUFFER DO CORPO DO FOR ---
+    bool is_in_for_body_capture;
+    std::vector<std::string> for_body_code_buffer;
 };
 
 #endif // SEMANTICO_H
