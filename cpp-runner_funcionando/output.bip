@@ -1,6 +1,7 @@
 .data
     i:	0
     j:	0
+    k:	0
     T1000:	0
     T1001:	0
     T1002:	0
@@ -8,100 +9,8 @@
     T1004:	0
     T1005:	0
     T1006:	0
-    T1007:	0
-    T1008:	0
-    T1009:	0
-    T1010:	0
-    T1011:	0
-    T1012:	0
-    T1013:	0
-    T1014:	0
-    T1015:	0
-    T1016:	0
-    T1017:	0
-    T1018:	0
-    T1019:	0
 
 .text
 _PRINCIPAL:
-    LDI	0
-    STO	T1000
-    LD	T1000
-    STO	i
 L0:
-    LD	i
-    STO	T1001
-    LDI	2
-    STO	T1002
-    LD	T1001
-    SUB	T1002
-    STO	T1003
-    LD	T1003
-    BGE	L1
-    LD	i
-    ADDI	1
-    STO	i
-L3:
-L4:
-L2:
-L5:
-    LDI	100
-    STO	T1004
-    LD	T1004
-    STO	$out_port
-    LD	i
-    STO	T1005
-    LDI	0
-    STO	T1006
-    LD	T1005
-    SUB	T1006
-    STO	T1007
-    LD	T1007
-    BNE	L2
-    LDI	200
-    STO	T1008
-    LD	T1008
-    STO	$out_port
-    LDI	2
-    STO	T1009
-    LD	T1009
-    STO	j
-    LD	j
-    STO	T1010
-    LDI	0
-    STO	T1011
-    LD	T1010
-    SUB	T1011
-    STO	T1012
-    LD	T1012
-    BLE	L4
-    LDI	201
-    STO	T1013
-    LD	T1013
-    STO	$out_port
-    LD	j
-    STO	T1014
-    LDI	1
-    STO	T1015
-    LD	T1014
-    SUB	T1015
-    STO	T1016
-    LD	T1016
-    STO	j
-    JMP	L3
-    JMP	L5
-    LDI	300
-    STO	T1017
-    LD	T1017
-    STO	$out_port
-    LDI	400
-    STO	T1018
-    LD	T1018
-    STO	$out_port
-    JMP	L0
 L1:
-    LDI	999
-    STO	T1019
-    LD	T1019
-    STO	$out_port
-    HLT	0

@@ -141,6 +141,25 @@ public:
     std::vector<Symbol> getTabela() const {
         return tabela;
     }
+
+    Symbol* buscarParaModificacao(const std::string& id) {
+        std::stack<std::string> escoposParaBusca = pilhaEscopos;
+        while (!escoposParaBusca.empty()) {
+            std::string escopoAtualDaBusca = escoposParaBusca.top();
+            
+            // Itera de trás para frente para encontrar a declaração mais recente primeiro
+            for (size_t i = tabela.size(); i > 0; --i) {
+                if (tabela[i-1].id == id && tabela[i-1].escopo == escopoAtualDaBusca) {
+                    // Retorna um PONTEIRO para o símbolo original na tabela
+                    return &tabela[i-1];
+                }
+            }
+            escoposParaBusca.pop();
+        }
+        // Se não encontrou em nenhum escopo, retorna um ponteiro nulo
+        return nullptr;
+    }
+
 };
 
 #endif

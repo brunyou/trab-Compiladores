@@ -111,6 +111,13 @@ private:
     // --- NOVOS MEMBROS PARA O BUFFER DO CORPO DO FOR ---
     bool is_in_for_body_capture;
     std::vector<std::string> for_body_code_buffer;
+
+    std::string active_function_call_name;
+    int arg_count;
+    // O tipo de cada argumento é inferido e guardado aqui para validação
+    std::vector<std::string> arg_types;
+    // O nome do temporário de cada argumento é guardado aqui para a passagem
+    std::vector<std::string> arg_temps; 
 };
 
 #endif // SEMANTICO_H

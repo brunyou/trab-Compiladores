@@ -1,25 +1,12 @@
-i : int;
-j : int;
+i: int;
+j: int;
+k: int;
 
 
-for (i = 0; i < 2; i++) {
-
-  escreva(100); 
- 
-  if (i == 0) {
-    escreva(200); 
-    
-    j = 2;
-
-    while (j > 0) {
-      escreva(201);
-      j = j - 1;
-    }
-
-  } else {
-    escreva(300);
-  }
-
-  escreva(400); 
+escreva(100); 
+k = 10;
+if (k == 10) {
+  escreva(101); 
+} else {
+  escreva(199); 
 }
-escreva(999); 
