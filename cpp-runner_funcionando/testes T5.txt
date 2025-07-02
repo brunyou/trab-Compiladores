@@ -1,0 +1,83 @@
+operadores relacionais:
+
+a: int;
+b: int;
+c: int;
+
+a = 10;
+b = 20;
+c = 10;
+
+if (b > a) { escreva(1); } 
+if (a < b) { escreva(2); } 
+if (a == c) { escreva(3); } 
+if (a != b) { escreva(4); } 
+if (a >= c) { escreva(5); } 
+if (c <= a) { escreva(6); } 
+
+
+IF SIMPLES:
+
+valor: int;
+valor = 5;
+
+if (valor > 0) {
+  escreva(10); 
+}
+
+valor = -5;
+if (valor > 0) {
+  escreva(99); 
+}
+
+IF COM ELSE:
+
+idade: int;
+idade = 17;
+
+if (idade >= 18) {
+  escreva(99); 
+} else {
+  escreva(20); }
+
+WHILE:
+
+contador: int;
+contador = 0;
+
+while (contador < 3) {
+  escreva(30);
+  contador = contador + 1;
+}
+
+// Teste para o laço DO-WHILE
+executou: int;
+executou = 1;
+
+do {
+  escreva(40);  executou = 0;
+} while (executou == 1);
+
+// Teste para o laço FOR
+i: int;
+
+for (i = 1; i <= 3; i++) {
+  escreva(50);
+}
+
+
+// Teste de Aninhamento
+i: int;
+j: int;
+
+for (i = 0; i < 2; i++) {
+  if (i == 0) {
+    escreva(60);
+  } else {
+    j = 2;
+    while (j > 0) {
+      escreva(70);
+      j = j - 1;
+    }
+  }
+}

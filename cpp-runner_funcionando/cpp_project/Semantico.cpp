@@ -11,6 +11,22 @@
 #include <stack>
 #include <algorithm>
 
+// --- CONSTRUTOR ---
+Semantico::Semantico(SymbolTable& table) :
+    symbolTable(table),
+    label_counter(0),
+    temp_address_start(1000),
+    assignment_target_is_vector_element(false),
+    currentLHS_idPosition(-1),
+    paramPositionCounter(-1),
+    arg_count(0),
+    active_id_pos(-1),
+    active_id_is_vector_access(false),
+    active_id_context(ActiveIdContext::NONE),
+    is_in_for_post_op_capture(false),
+    is_in_for_body_capture(false)
+{}
+
 // --- FUNÇÕES AUXILIARES DE GERAÇÃO DE CÓDIGO ---
 std::string Semantico::new_label() { return "L" + std::to_string(label_counter++); }
 std::string Semantico::new_temp() {
@@ -50,7 +66,7 @@ std::string Semantico::get_generated_code() {
 // --- EXECUÇÃO DAS AÇÕES SEMÂNTICAS ---
 void Semantico::executeAction(int action, const Token *token) {
     switch (action) {
-        case 1: { // Finaliza declarações
+        case 1: {
             std::string type = token->getLexeme();
             for (const auto& item : pending_declarations_list) {
                 if (symbolTable.existeNoEscopoAtual(item.name)) throw SemanticError("ID '" + item.name + "' já declarado.", item.position);
@@ -63,13 +79,29 @@ void Semantico::executeAction(int action, const Token *token) {
             break;
         }
         case 2: { current_dec_id_name = token->getLexeme(); current_dec_id_pos = token->getPosition(); break; }
-        case 3: { assignment_target_id_name = token->getLexeme(); active_id_name = token->getLexeme(); active_id_pos = token->getPosition(); auto s = symbolTable.buscar(assignment_target_id_name); if(!s) throw SemanticError("ID '"+assignment_target_id_name+"' não declarado.", active_id_pos); currentLHS_idType = s->tipo; break; }
-        case 4: { currentRHS_expressionType = "int"; if (currentLHS_idType != currentRHS_expressionType) throw SemanticError("Tipos incompatíveis.", active_id_pos); break; }
+        case 3: {
+            assignment_target_id_name = token->getLexeme();
+            active_id_name = token->getLexeme();
+            active_id_pos = token->getPosition();
+            auto s = symbolTable.buscar(assignment_target_id_name);
+            if(!s) throw SemanticError("ID '"+assignment_target_id_name+"' não declarado.", active_id_pos);
+            currentLHS_idType = s->tipo;
+            active_id_context = ActiveIdContext::LHS_ASSIGNMENT;
+            break;
+        }
+        case 4: {
+            currentRHS_expressionType = "int";
+            if (currentLHS_idType != currentRHS_expressionType && currentLHS_idType != "float" && currentLHS_idType != "double") {
+                 throw SemanticError("Tipos incompatíveis na atribuição.", active_id_pos);
+            }
+            break;
+        }
         case 5: {
-            if (operand_stack.empty()) throw SemanticError("Expressão RHS inválida.",-1);
+            if (operand_stack.empty()) throw SemanticError("Expressão RHS inválida para atribuição.",-1);
             std::string temp = operand_stack.top(); operand_stack.pop();
             gera_cod("LD", temp);
-            if (assignment_target_is_vector_element) { gera_cod("STOV", assignment_target_id_name); } else { gera_cod("STO", assignment_target_id_name); }
+            if (assignment_target_is_vector_element) { gera_cod("STOV", assignment_target_id_name); } 
+            else { gera_cod("STO", assignment_target_id_name); }
             free_temp(temp);
             symbolTable.marcarInicializado(assignment_target_id_name);
             break;
@@ -105,25 +137,25 @@ void Semantico::executeAction(int action, const Token *token) {
         case 15: { break; }
         case 16: { gera_cod("LD", "$in_port"); if (active_id_is_vector_access) { gera_cod("STOV", active_id_name); } else { gera_cod("STO", active_id_name); } symbolTable.marcarInicializado(active_id_name); break; }
         case 17: { if (operand_stack.empty()) throw SemanticError("Expressão para 'escreva' inválida.",-1); std::string temp = operand_stack.top(); operand_stack.pop(); gera_cod("LD", temp); gera_cod("STO", "$out_port"); free_temp(temp); break; }
-        case 18: { active_id_name = token->getLexeme(); active_id_pos = token->getPosition(); if(!symbolTable.buscar(active_id_name)) throw SemanticError("ID '"+active_id_name+"' não declarado.", active_id_pos); symbolTable.marcarUsado(active_id_name); break; }
+        case 18: { active_id_name = token->getLexeme(); active_id_pos = token->getPosition(); if(!symbolTable.buscar(active_id_name)) throw SemanticError("ID '"+active_id_name+"' não declarado.", active_id_pos); symbolTable.marcarUsado(active_id_name); active_id_context = ActiveIdContext::RHS_EXPRESSION; break; }
         case 19: { std::string temp = new_temp(); gera_cod("LDI", token->getLexeme()); gera_cod("STO", temp); operand_stack.push(temp); break; }
         case 20: { gera_cod("HLT", "0"); break; }
-        case 21: case 31: { if(operand_stack.size()<2) throw SemanticError("Operandos insuficientes.",-1); std::string op2=operand_stack.top(); operand_stack.pop(); std::string op1=operand_stack.top(); operand_stack.pop(); gera_cod("LD",op1); gera_cod("ADD",op2); std::string temp=new_temp(); gera_cod("STO",temp); operand_stack.push(temp); free_temp(op1); free_temp(op2); break; }
-        case 22: case 32: { if(operand_stack.size()<2) throw SemanticError("Operandos insuficientes.",-1); std::string op2=operand_stack.top(); operand_stack.pop(); std::string op1=operand_stack.top(); operand_stack.pop(); gera_cod("LD",op1); gera_cod("SUB",op2); std::string temp=new_temp(); gera_cod("STO",temp); operand_stack.push(temp); free_temp(op1); free_temp(op2); break; }
-        case 23: { gera_cod("STO", "$indr"); break; }
+        case 21: case 31: { if(operand_stack.size()<2) throw SemanticError("Operandos insuficientes para ADD.",-1); std::string op2=operand_stack.top(); operand_stack.pop(); std::string op1=operand_stack.top(); operand_stack.pop(); gera_cod("LD",op1); gera_cod("ADD",op2); std::string temp=new_temp(); gera_cod("STO",temp); operand_stack.push(temp); free_temp(op1); free_temp(op2); break; }
+        case 22: case 32: { if(operand_stack.size()<2) throw SemanticError("Operandos insuficientes para SUB.",-1); std::string op2=operand_stack.top(); operand_stack.pop(); std::string op1=operand_stack.top(); operand_stack.pop(); gera_cod("LD",op1); gera_cod("SUB",op2); std::string temp=new_temp(); gera_cod("STO",temp); operand_stack.push(temp); free_temp(op1); free_temp(op2); break; }
+        case 23: { if (operand_stack.empty()) throw SemanticError("Expressão de índice inválida.", -1); std::string temp = operand_stack.top(); operand_stack.pop(); gera_cod("LD", temp); gera_cod("STO", "$indr"); free_temp(temp); break; }
         case 24: { active_id_is_vector_access = true; if(active_id_context == ActiveIdContext::LHS_ASSIGNMENT) { assignment_target_is_vector_element = true; } break; }
         case 25: { active_id_is_vector_access = false; if(active_id_context == ActiveIdContext::LHS_ASSIGNMENT) { assignment_target_is_vector_element = false; } break; }
-        case 26: { active_id_name = token->getLexeme(); break; }
+        case 26: { active_id_name = token->getLexeme(); active_id_context = ActiveIdContext::LEIA_TARGET; break; }
         case 27: { std::string temp = new_temp(); if (active_id_is_vector_access) { gera_cod("LDV", active_id_name); } else { gera_cod("LD", active_id_name); } gera_cod("STO", temp); operand_stack.push(temp); break; }
         case 28: { int s=std::stoi(token->getLexeme()); if(s<=0) throw SemanticError("Tamanho do vetor inválido.",token->getPosition()); pending_declarations_list.push_back({current_dec_id_name,current_dec_id_pos,true,s}); current_dec_id_name.clear(); break; }
         case 29: { pending_declarations_list.push_back({current_dec_id_name,current_dec_id_pos,false,1}); current_dec_id_name.clear(); break; }
         case 30: case 38: { break; }
         case 33: { currentRelationalOperator = token->getLexeme(); break; }
-        case 34: { if(operand_stack.size()<2) throw SemanticError("Operandos insuficientes.",-1); std::string op2=operand_stack.top(); operand_stack.pop(); std::string op1=operand_stack.top(); operand_stack.pop(); gera_cod("LD",op1); gera_cod("SUB",op2); std::string temp=new_temp(); gera_cod("STO",temp); operand_stack.push(temp); free_temp(op1); free_temp(op2); break; }
+        case 34: { if(operand_stack.size()<2) throw SemanticError("Operandos insuficientes para comparação.",-1); std::string op2=operand_stack.top(); operand_stack.pop(); std::string op1=operand_stack.top(); operand_stack.pop(); gera_cod("LD",op1); gera_cod("SUB",op2); std::string temp=new_temp(); gera_cod("STO",temp); operand_stack.push(temp); free_temp(op1); free_temp(op2); break; }
         case 35: case 40: case 45: {
             if (operand_stack.empty()) throw SemanticError("Condição inválida.", -1);
-            std::string result_temp = operand_stack.top(); operand_stack.pop();
-            gera_cod("LD", result_temp); free_temp(result_temp);
+            std::string temp = operand_stack.top(); operand_stack.pop();
+            gera_cod("LD", temp); free_temp(temp);
             std::string label = new_label(); labels_stack.push(label);
             if (currentRelationalOperator == ">") gera_cod("BLE", label);
             else if (currentRelationalOperator == "<") gera_cod("BGE", label);
@@ -135,9 +167,9 @@ void Semantico::executeAction(int action, const Token *token) {
             currentRelationalOperator.clear();
             break;
         }
-        case 36: { std::string fim_if=new_label(); std::string inicio_else=labels_stack.top(); labels_stack.pop(); gera_cod("JMP", fim_if); text_section.push_back(inicio_else + ":"); labels_stack.push(fim_if); break; }
-        case 37: { std::string label=labels_stack.top(); labels_stack.pop(); text_section.push_back(label + ":"); break; }
-        case 39: case 42: { std::string label=new_label(); text_section.push_back(label + ":"); labels_stack.push(label); break; }
+        case 36: { std::string f=new_label(); std::string e=labels_stack.top();labels_stack.pop(); gera_cod("JMP",f); text_section.push_back(e+":"); labels_stack.push(f); break; }
+        case 37: { std::string l=labels_stack.top();labels_stack.pop(); text_section.push_back(l+":"); break; }
+        case 39: case 42: { std::string l=new_label(); text_section.push_back(l+":"); labels_stack.push(l); break; }
         case 41: { std::string f=labels_stack.top();labels_stack.pop(); std::string i=labels_stack.top();labels_stack.pop(); gera_cod("JMP",i); text_section.push_back(f+":"); break; }
         case 43: { if(operand_stack.empty()||labels_stack.empty())throw SemanticError("Estrutura do-while inválida.",-1); std::string r=operand_stack.top();operand_stack.pop(); std::string i=labels_stack.top();labels_stack.pop(); gera_cod("LD",r); free_temp(r); if(currentRelationalOperator==">")gera_cod("BGT",i); else if(currentRelationalOperator=="<")gera_cod("BLT",i); else if(currentRelationalOperator=="==")gera_cod("BEQ",i); else if(currentRelationalOperator=="!=")gera_cod("BNE",i); else if(currentRelationalOperator==">=")gera_cod("BGE",i); else if(currentRelationalOperator=="<=")gera_cod("BLE",i); else gera_cod("BNE",i); currentRelationalOperator.clear(); break; }
         case 44: { std::string l=new_label(); text_section.push_back(l+":"); labels_stack.push(l); break; }
@@ -163,7 +195,6 @@ void Semantico::executeAction(int action, const Token *token) {
                 throw SemanticError("Função '" + active_function_call_name + "' esperava " + std::to_string(s->assinaturaParametros.size()) + " params, mas " + std::to_string(arg_count) + " foram passados.", -1);
             }
             for (int i = 0; i < arg_count; ++i) {
-                if (arg_types[i] != s->assinaturaParametros[i].tipo) throw SemanticError("Tipo incompatível para o param " + std::to_string(i+1) + " na chamada de '" + active_function_call_name + "'.", -1);
                 gera_cod("LD", arg_temps[i]);
                 gera_cod("STO", s->assinaturaParametros[i].nome);
                 free_temp(arg_temps[i]);
@@ -229,4 +260,8 @@ std::string Semantico::formatarTabelaSimbolos() {
                   std::to_string(s.linhaDeclaracao) + "\n";
     }
     return output;
+}
+
+std::vector<std::string> Semantico::getCompilationWarnings() {
+    return this->compilationWarnings;
 }

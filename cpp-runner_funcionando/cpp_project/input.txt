@@ -1,12 +1,14 @@
 i: int;
 j: int;
-k: int;
 
-
-escreva(100); 
-k = 10;
-if (k == 10) {
-  escreva(101); 
-} else {
-  escreva(199); 
+for (i = 0; i < 2; i++) {
+  if (i == 0) {
+    escreva(60);
+  } else {
+    j = 2;
+    while (j > 0) {
+      escreva(70);
+      j = j - 1;
+    }
+  }
 }
