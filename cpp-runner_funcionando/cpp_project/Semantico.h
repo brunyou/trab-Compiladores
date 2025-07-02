@@ -44,11 +44,7 @@ private:
     SymbolTable& symbolTable;
     std::vector<std::string> data_section;
     std::vector<std::string> text_section;
-
-    // --- VETOR DE AVISOS ADICIONADO DE VOLTA ---
     std::vector<std::string> compilationWarnings; 
-    
-    // ... (resto dos membros privados como antes) ...
     int label_counter;
     int temp_address_start;
     std::stack<std::string> labels_stack;
@@ -79,7 +75,8 @@ private:
     std::vector<std::string> for_post_op_code_buffer;
     bool is_in_for_body_capture;
     std::vector<std::string> for_body_code_buffer;
-
+    std::string main_code_label;
+    bool main_label_placed;
     std::string new_label();
     std::string new_temp();
     void free_temp(const std::string& temp);

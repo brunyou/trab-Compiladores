@@ -16,6 +16,7 @@ Semantico::Semantico(SymbolTable& table) :
     symbolTable(table),
     label_counter(0),
     temp_address_start(1000),
+    main_label_placed(false),
     assignment_target_is_vector_element(false),
     currentLHS_idPosition(-1),
     paramPositionCounter(-1),
@@ -25,7 +26,10 @@ Semantico::Semantico(SymbolTable& table) :
     active_id_context(ActiveIdContext::NONE),
     is_in_for_post_op_capture(false),
     is_in_for_body_capture(false)
-{}
+{
+    this->main_code_label = new_label();
+    gera_cod("JMP", this->main_code_label);
+}
 
 // --- FUNÇÕES AUXILIARES DE GERAÇÃO DE CÓDIGO ---
 std::string Semantico::new_label() { return "L" + std::to_string(label_counter++); }
@@ -36,7 +40,7 @@ std::string Semantico::new_temp() {
 }
 void Semantico::free_temp(const std::string& temp) { }
 
-void Semantico::gera_cod(const std::string& instruction, const std::string& arg1, const std::string& arg2) {
+void Semantico::gera_cod(const std::string& instruction, const std::string& arg1, const std::string& arg2) {    
     std::string line = "    " + instruction;
     if (!arg1.empty()) line += "\t" + arg1;
     if (!arg2.empty()) line += "\t" + arg2;
@@ -230,6 +234,15 @@ void Semantico::executeAction(int action, const Token *token) {
                 free_temp(temp);
             }
             gera_cod("RETURN");
+            break;
+        }
+        case 59: {
+            // Só posiciona o rótulo se ele ainda não foi colocado E se não estivermos
+            // dentro da definição de uma função.
+            if (!main_label_placed && currentProcessingFunctionName.empty()) {
+                text_section.push_back(main_code_label + ":");
+                main_label_placed = true;
+            }
             break;
         }
         default:

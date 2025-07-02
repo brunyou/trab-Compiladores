@@ -1,83 +1,124 @@
-operadores relacionais:
 
-a: int;
-b: int;
-c: int;
+// TESTES DO T5
+// --- Teste 1: Operadores Relacionais ---
+escreva(100);
+a1: int;
+b1: int;
+c1: int;
+a1 = 10;
+b1 = 20;
+c1 = 10;
+if (b1 > a1) { escreva(1); }
+if (a1 < b1) { escreva(2); }
+if (a1 == c1) { escreva(3); }
+if (a1 != b1) { escreva(4); }
+if (a1 >= c1) { escreva(5); }
+if (c1 <= a1) { escreva(6); }
 
-a = 10;
-b = 20;
-c = 10;
 
-if (b > a) { escreva(1); } 
-if (a < b) { escreva(2); } 
-if (a == c) { escreva(3); } 
-if (a != b) { escreva(4); } 
-if (a >= c) { escreva(5); } 
-if (c <= a) { escreva(6); } 
-
-
-IF SIMPLES:
-
-valor: int;
-valor = 5;
-
-if (valor > 0) {
-  escreva(10); 
+// --- Teste 2: Desvio Condicional Simples (sem else) ---
+escreva(200);
+valor2: int;
+valor2 = 5;
+if (valor2 > 0) {
+  escreva(10);
+}
+valor2 = -5;
+if (valor2 > 0) {
+  escreva(99);
 }
 
-valor = -5;
-if (valor > 0) {
-  escreva(99); 
-}
 
-IF COM ELSE:
-
-idade: int;
-idade = 17;
-
-if (idade >= 18) {
-  escreva(99); 
+// --- Teste 3: Desvio Condicional Composto (com else) ---
+escreva(300);
+idade3: int;
+idade3 = 17;
+if (idade3 >= 18) {
+  escreva(99);
 } else {
-  escreva(20); }
-
-WHILE:
-
-contador: int;
-contador = 0;
-
-while (contador < 3) {
-  escreva(30);
-  contador = contador + 1;
+  escreva(20);
 }
 
-// Teste para o laço DO-WHILE
-executou: int;
-executou = 1;
 
+// --- Teste 4: Laço WHILE ---
+escreva(400);
+contador4: int;
+contador4 = 0;
+while (contador4 < 3) {
+  escreva(30);
+  contador4 = contador4 + 1;
+}
+
+
+// --- Teste 5: Laço DO-WHILE ---
+escreva(500);
+executou5: int;
+executou5 = 1;
 do {
-  escreva(40);  executou = 0;
-} while (executou == 1);
+  escreva(40);
+  executou5 = 0;
+} while (executou5 == 1);
 
-// Teste para o laço FOR
-i: int;
 
-for (i = 1; i <= 3; i++) {
+// --- Teste 6: Laço FOR ---
+escreva(600);
+i6: int;
+for (i6 = 1; i6 <= 3; i6++) {
   escreva(50);
 }
 
 
-// Teste de Aninhamento
-i: int;
-j: int;
-
-for (i = 0; i < 2; i++) {
-  if (i == 0) {
+// --- Teste 7: Aninhamento de Estruturas ---
+escreva(700);
+i7: int;
+j7: int;
+for (i7 = 0; i7 < 2; i7++) {
+  if (i7 == 0) {
     escreva(60);
   } else {
-    j = 2;
-    while (j > 0) {
+    j7 = 2;
+    while (j7 > 0) {
       escreva(70);
-      j = j - 1;
+      j7 = j7 - 1;
     }
   }
 }
+
+
+// TESTES DO T6
+// --- Declarações de Funções ---
+
+function void teste_chamada_simples() {
+  escreva(801);
+}
+
+function void teste_parametros(int p1, int p2) {
+  escreva(p1 + p2);
+}
+
+function int teste_retorno(int val_entrada) {
+  return val_entrada + 10;
+}
+
+
+// --- Testes de Chamada ---
+
+// --- Teste 8: Chamada de sub-rotina simples ---
+escreva(800);
+teste_chamada_simples();
+
+
+// --- Teste 9: Passagem de parâmetros por cópia ---
+escreva(900);
+teste_parametros(50, 25);
+
+
+// --- Teste 10: Retorno de função e uso em atribuição ---
+escreva(1000);
+resultado10: int;
+resultado10 = teste_retorno(40);
+escreva(resultado10);
+
+
+// --- Marcador final do programa ---
+escreva(9999);
