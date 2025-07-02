@@ -79,6 +79,7 @@ private:
     bool main_label_placed;
     std::string new_label();
     std::string new_temp();
+    void place_label(const std::string& label);
     void free_temp(const std::string& temp);
     void gera_cod(const std::string& instruction, const std::string& arg1 = "", const std::string& arg2 = "");
     void gera_data(const std::string& label, const std::string& value, int count = 1);

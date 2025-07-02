@@ -49,7 +49,16 @@ void Semantico::gera_cod(const std::string& instruction, const std::string& arg1
     else if (this->is_in_for_body_capture) { for_body_code_buffer.push_back(line); } 
     else { text_section.push_back(line); }
 }
-
+void Semantico::place_label(const std::string& label) {
+    std::string label_line = label + ":";
+    if (this->is_in_for_post_op_capture) {
+        for_post_op_code_buffer.push_back(label_line);
+    } else if (this->is_in_for_body_capture) {
+        for_body_code_buffer.push_back(label_line);
+    } else {
+        text_section.push_back(label_line);
+    }
+}
 void Semantico::gera_data(const std::string& label, const std::string& value, int count) {
     for(const auto& line : data_section) { if(line.rfind(label + ":", 0) == 0) return; }
     data_section.push_back(label + ":\t" + value);
@@ -120,7 +129,7 @@ void Semantico::executeAction(int action, const Token *token) {
             symbolTable.inserir(s);
             symbolTable.entrarEscopoFuncao(currentProcessingFunctionName);
             currentFunctionParamsInfoList.clear();
-            text_section.push_back("_" + currentProcessingFunctionName + ":");
+            place_label("_" + currentProcessingFunctionName);
             break;
         }
         case 9: { Symbol* s = symbolTable.buscarParaModificacao(currentProcessingFunctionName); if(s) s->assinaturaParametros = currentFunctionParamsInfoList; break; }
@@ -171,15 +180,34 @@ void Semantico::executeAction(int action, const Token *token) {
             currentRelationalOperator.clear();
             break;
         }
-        case 36: { std::string f=new_label(); std::string e=labels_stack.top();labels_stack.pop(); gera_cod("JMP",f); text_section.push_back(e+":"); labels_stack.push(f); break; }
-        case 37: { std::string l=labels_stack.top();labels_stack.pop(); text_section.push_back(l+":"); break; }
-        case 39: case 42: { std::string l=new_label(); text_section.push_back(l+":"); labels_stack.push(l); break; }
-        case 41: { std::string f=labels_stack.top();labels_stack.pop(); std::string i=labels_stack.top();labels_stack.pop(); gera_cod("JMP",i); text_section.push_back(f+":"); break; }
+        case 36: { std::string f=new_label(); std::string e=labels_stack.top();labels_stack.pop(); gera_cod("JMP",f); place_label(e); labels_stack.push(f); break; }
+        case 37: { std::string l=labels_stack.top();labels_stack.pop(); place_label(l); break; }
+        case 39: case 42: { std::string l=new_label(); place_label(l); labels_stack.push(l); break; }
+        case 41: { std::string f=labels_stack.top();labels_stack.pop(); std::string i=labels_stack.top();labels_stack.pop(); gera_cod("JMP",i); place_label(f); break; }
         case 43: { if(operand_stack.empty()||labels_stack.empty())throw SemanticError("Estrutura do-while inválida.",-1); std::string r=operand_stack.top();operand_stack.pop(); std::string i=labels_stack.top();labels_stack.pop(); gera_cod("LD",r); free_temp(r); if(currentRelationalOperator==">")gera_cod("BGT",i); else if(currentRelationalOperator=="<")gera_cod("BLT",i); else if(currentRelationalOperator=="==")gera_cod("BEQ",i); else if(currentRelationalOperator=="!=")gera_cod("BNE",i); else if(currentRelationalOperator==">=")gera_cod("BGE",i); else if(currentRelationalOperator=="<=")gera_cod("BLE",i); else gera_cod("BNE",i); currentRelationalOperator.clear(); break; }
-        case 44: { std::string l=new_label(); text_section.push_back(l+":"); labels_stack.push(l); break; }
+        case 44: { std::string l=new_label(); place_label(l); labels_stack.push(l); break; }
         case 46: { is_in_for_post_op_capture = true; for_post_op_code_buffer.clear(); break; }
         case 47: { is_in_for_post_op_capture = false; break; }
-        case 48: { for(const auto& l:for_body_code_buffer)text_section.push_back(l); for(const auto& l:for_post_op_code_buffer)text_section.push_back(l); std::string f=labels_stack.top();labels_stack.pop(); std::string c=labels_stack.top();labels_stack.pop(); gera_cod("JMP",c); text_section.push_back(f+":"); break; }
+        case 48: { // FOR: Fim de tudo
+            // PASSO 1: Despeja o código do CORPO do laço (que foi capturado no buffer).
+            for (const auto& line : for_body_code_buffer) {
+                text_section.push_back(line);
+            }
+
+            // PASSO 2: Despeja o código da PÓS-OPERAÇÃO (que estava no outro buffer).
+            for (const auto& line : for_post_op_code_buffer) {
+                text_section.push_back(line);
+            }
+            
+            // PASSO 3: Gera o JMP de volta para o teste da condição.
+            std::string fim_label = labels_stack.top(); labels_stack.pop();
+            std::string cond_label = labels_stack.top(); labels_stack.pop();
+            gera_cod("JMP", cond_label);
+
+            // PASSO 4: Posiciona o RÓTULO DE FIM do laço.
+            place_label(fim_label);
+            break;
+        }
         case 49: { active_id_name = token->getLexeme(); break; }
         case 50: { gera_cod("LD", active_id_name); gera_cod("ADDI", "1"); gera_cod("STO", active_id_name); break; }
         case 51: { gera_cod("LD", active_id_name); gera_cod("SUBI", "1"); gera_cod("STO", active_id_name); break; }
@@ -240,7 +268,7 @@ void Semantico::executeAction(int action, const Token *token) {
             // Só posiciona o rótulo se ele ainda não foi colocado E se não estivermos
             // dentro da definição de uma função.
             if (!main_label_placed && currentProcessingFunctionName.empty()) {
-                text_section.push_back(main_code_label + ":");
+                place_label(main_code_label);
                 main_label_placed = true;
             }
             break;

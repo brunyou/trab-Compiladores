@@ -1,9 +1,11 @@
 .data
     T1000:	0
-    valor2:	0
+    p1:	0
+    p2:	0
     T1001:	0
     T1002:	0
     T1003:	0
+    val_entrada:	0
     T1004:	0
     T1005:	0
     T1006:	0
@@ -11,49 +13,75 @@
     T1008:	0
     T1009:	0
     T1010:	0
+    T1011:	0
+    resultado10:	0
+    T1012:	0
+    T1013:	0
+    T1014:	0
 
 .text
 _PRINCIPAL:
     JMP	L0
-L0:
-    LDI	200
+_teste_chamada_simples:
+    LDI	801
     STO	T1000
     LD	T1000
     STO	$out_port
-    LDI	5
+    RETURN
+_teste_parametros:
+    LD	p1
     STO	T1001
-    LD	T1001
-    STO	valor2
-    LD	valor2
+    LD	p2
     STO	T1002
-    LDI	0
+    LD	T1001
+    ADD	T1002
     STO	T1003
-    LD	T1002
-    SUB	T1003
+    LD	T1003
+    STO	$out_port
+    RETURN
+_teste_retorno:
+    LD	val_entrada
     STO	T1004
-    LD	T1004
-    BLE	L1
     LDI	10
     STO	T1005
-    LD	T1005
-    STO	$out_port
-L1:
-    LDI	5
+    LD	T1004
+    ADD	T1005
     STO	T1006
     LD	T1006
-    STO	valor2
-    LD	valor2
+    RETURN
+    RETURN
+    LDI	800
     STO	T1007
-    LDI	0
-    STO	T1008
     LD	T1007
-    SUB	T1008
-    STO	T1009
-    LD	T1009
-    BLE	L2
-    LDI	99
-    STO	T1010
-    LD	T1010
     STO	$out_port
-L2:
+    CALL	_teste_chamada_simples
+    LDI	900
+    STO	T1008
+    LD	T1008
+    STO	$out_port
+    LDI	50
+    STO	T1009
+    LDI	25
+    STO	T1010
+    LD	T1009
+    STO	p1
+    LD	T1010
+    STO	p2
+    CALL	_teste_parametros
+    LDI	1000
+    STO	T1011
+    LD	T1011
+    STO	$out_port
+    LDI	40
+    STO	T1012
+    LD	T1012
+    STO	val_entrada
+    CALL	_teste_retorno
+    STO	T1013
+    LD	T1013
+    STO	resultado10
+    LD	resultado10
+    STO	T1014
+    LD	T1014
+    STO	$out_port
     HLT	0

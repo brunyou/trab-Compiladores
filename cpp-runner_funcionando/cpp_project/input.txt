@@ -1,10 +1,21 @@
-escreva(200);
-valor2: int;
-valor2 = 5;
-if (valor2 > 0) {
-  escreva(10);
+function void teste_chamada_simples() {
+  escreva(801);
 }
-valor2 = -5;
-if (valor2 > 0) {
-  escreva(99);
+
+function void teste_parametros(int p1, int p2) {
+  escreva(p1 + p2);
 }
+
+function int teste_retorno(int val_entrada) {
+  return val_entrada + 10;
+}
+
+escreva(800);
+teste_chamada_simples();
+escreva(900);
+teste_parametros(50, 25);
+
+escreva(1000);
+resultado10: int;
+resultado10 = teste_retorno(40);
+escreva(resultado10);
