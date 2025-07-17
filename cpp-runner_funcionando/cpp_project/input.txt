@@ -1,21 +1,11 @@
+
+
+function void teste_parametros(int p1) {
+  escreva(p1);
+}
+
 function void teste_chamada_simples() {
-  escreva(801);
+p1,p2 : int;
+  teste_parametros("a");
 }
 
-function void teste_parametros(int p1, int p2) {
-  escreva(p1 + p2);
-}
-
-function int teste_retorno(int val_entrada) {
-  return val_entrada + 10;
-}
-
-escreva(800);
-teste_chamada_simples();
-escreva(900);
-teste_parametros(50, 25);
-
-escreva(1000);
-resultado10: int;
-resultado10 = teste_retorno(40);
-escreva(resultado10);

@@ -1,0 +1,8 @@
+para iniciar o backend é necessário ter o node instalado!!
+1. Abrir um terminal na pasta cpp-runner_funcionando
+2. Executar o comando: node ./server.js
+3. Abrir agora o index.html e testar o compilador 
+
+O projeto tem uma interface web que utiliza o server.js para executar comandos o executável gerado, para o compilador foi utilizada a base em C++. Em caso de dúvidas para executar, coloco-me à disposição.
+
+E-mail: brunofreitas65@hotmail.com 
